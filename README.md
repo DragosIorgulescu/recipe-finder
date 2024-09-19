@@ -22,3 +22,7 @@ Things you may want to cover:
 * Deployment instructions
 
 * ...
+
+## Improvements
+
+- update recipe - ingredients relation to be a HABTM type relation and enforce uniqueness on the ingredients table
