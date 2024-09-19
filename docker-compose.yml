@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.rails
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/recipe_finder_development
+    depends_on:
+      - db
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.web
+    command: npm run dev
+    volumes:
+      - ./web:/app
+      - node_modules:/app/node_modules
+    ports:
+      - "3001:3000"
+    environment:
+      API_URL: http://api:3000
+
+volumes:
+  postgres_data:
+  bundle_cache:
+  node_modules:
