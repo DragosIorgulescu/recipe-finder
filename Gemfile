@@ -1,5 +1,8 @@
 source "https://rubygems.org"
 
+gem "grape"
+gem "grape-entity"
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.2.1"
 # Use postgresql as the database for Active Record
@@ -45,4 +48,8 @@ group :development, :test do
   gem "rspec-rails"
   gem "factory_bot_rails"
   gem "faker"
+end
+
+group :test do
+  gem "database_cleaner-active_record"
 end
