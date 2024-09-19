@@ -21,7 +21,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgres://postgres:password@db:5432/recipe_finder_development
+      RAILS_ENV: development
     depends_on:
       - db
 

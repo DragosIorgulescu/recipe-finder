@@ -8,7 +8,7 @@ recipes_data = JSON.parse(File.read(file_path))
 
 seeded_recipes_count = 0
 seeded_ingredients_count = 0
-recipes_data.each_batch(batch_size: ) do |recipe_data|
+recipes_data.each_batch(batch_size:) do |recipe_data|
   next if Recipe.exists?(title: recipe_data['title'])
 
   recipe = Recipe.create!(
