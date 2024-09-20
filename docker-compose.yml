@@ -31,7 +31,7 @@ services:
       dockerfile: Dockerfile.web
     command: npm run dev
     volumes:
-      - ./web:/app
+      - ./web:/web
       - node_modules:/app/node_modules
     ports:
       - "3001:3000"
