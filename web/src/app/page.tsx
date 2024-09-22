@@ -7,7 +7,6 @@ import {Button} from "@/components/ui/button"
 import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
 import {Badge} from "@/components/ui/badge"
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
-import qs from 'qs'
 
 interface Recipe {
   id: number
@@ -25,7 +24,7 @@ interface Recipe {
 function RecipeFinder() {
   const {isPending, error, data: recipes, isFetching, refetch} = useQuery<Recipe[]>({
     enabled: false, queryKey: ['recipes'], queryFn: async () => {
-      const queryParams = qs.stringify({
+      const queryParams = new URLSearchParams({
         ingredients: tags.join(','),
       });
 
@@ -186,7 +185,7 @@ function RecipeCard({recipe}: { recipe: Recipe }) {
 
 const queryClient = new QueryClient()
 
-export default function () {
+export default function Home() {
   return (
     <QueryClientProvider client={queryClient}>
       <RecipeFinder/>
