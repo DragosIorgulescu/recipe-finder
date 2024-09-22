@@ -1,12 +1,18 @@
 "use client"
 
-import React, {useState} from "react"
+import React, {useCallback, useEffect, useState} from "react"
 import {X, Clock, Search} from "lucide-react"
 import {Input} from "@/components/ui/input"
 import {Button} from "@/components/ui/button"
 import {Card, CardContent, CardFooter, CardHeader, CardTitle} from "@/components/ui/card"
 import {Badge} from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
+import {CreateMLCEngine, InitProgressReport} from "@mlc-ai/web-llm";
+import {MLCEngine} from "@mlc-ai/web-llm/lib/engine";
+import {ChatCompletionMessageParam} from "@mlc-ai/web-llm/lib/openai_api_protocols/chat_completion";
 
 interface Recipe {
   id: number
@@ -36,12 +42,60 @@ function RecipeFinder() {
     }
   })
 
+  const [isLLMMode, setIsLLMMode] = useState(false)
   const [tags, setTags] = useState<string[]>([])
   const [inputValue, setInputValue] = useState("")
+  const [LLMEngine, setLLMEngine] = useState<MLCEngine>()
+  const [LLMProgress, setLLMProgress] = useState<InitProgressReport>()
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const initProgressCallback = (initProgress: InitProgressReport) => {
+    console.log(initProgress);
+    setLLMProgress(initProgress)
+  }
+  const selectedModel = "Llama-3.1-8B-Instruct-q4f32_1-MLC";
+
+  const loadEngine = useCallback(async () => {
+    const engine = await CreateMLCEngine(
+      selectedModel,
+      { initProgressCallback: initProgressCallback }, // engineConfig
+    );
+
+    setLLMEngine(engine)
+  }, [])
+
+  const queryEngine = useCallback(async (content: string) => {
+    if (LLMEngine) {
+      const messages: ChatCompletionMessageParam[] = [
+        { role: "system", content: "You are a helpful AI chef whose role is to extract ingredients from the user message and return them in one line, separated by commas. The outpus should not include any other symbols" },
+      ]
+
+      const reply = await LLMEngine.chat.completions.create({
+        messages: [ ...messages,
+          { role: "user", content },
+        ],
+      });
+
+      console.log(reply.choices[0].message);
+      console.log(reply.usage);
+
+      setTags(reply.choices[0].message?.content?.split(',') || [])
+    }
+  }, [LLMEngine])
+
+  useEffect(() => {
+    if (isLLMMode && !LLMEngine) {
+      loadEngine()
+    }
+  }, [isLLMMode, LLMEngine, loadEngine])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInputValue(e.target.value)
   }
+
+  const handleLLMInputBlur = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    queryEngine(e.target.value)
+  }
+
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputValue) {
@@ -69,35 +123,87 @@ function RecipeFinder() {
   return (
     <div className="max-w-6xl mx-auto p-4">
       <h1 className="text-3xl font-bold mb-6">Recipe Finder</h1>
+      <span><i>!! Switching to LLM mode will download and cache a Llama-3.1-8B (4GB) model which will run locally in the browser, please make sure you have the available disk space before switching !!</i></span>
+
+      {isLLMMode && LLMProgress && (
+        <>
+          <br/>
+          <span>LLM Status: <b>{LLMProgress.text}</b></span>
+        </>
+      )}
+      <div className="flex items-center justify-end space-x-2 mb-4">
+        <Label htmlFor="input-mode">LLM Mode</Label>
+        <Switch
+          id="input-mode"
+          checked={isLLMMode}
+          onCheckedChange={setIsLLMMode}
+        />
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4 mb-8">
-        <div className="flex flex-wrap items-center p-2 border rounded-lg bg-background">
-          {tags.map(tag => (
-            <span
-              key={tag}
-              className="flex items-center m-1 px-2 py-1 bg-primary text-primary-foreground rounded-full text-sm"
-            >
-              {tag}
-              <button
-                type="button"
-                onClick={() => removeTag(tag)}
-                className="ml-1 focus:outline-none"
-                aria-label={`Remove ${tag}`}
+        {isLLMMode && (
+          <div>
+            <Textarea
+              value={inputValue}
+              onChange={handleInputChange}
+              onBlur={handleLLMInputBlur}
+              className="min-h-[100px]"
+              placeholder="Describe the ingredients you're have available..."
+              aria-label="Describe your ingredients"
+              disabled={!LLMEngine}
+            />
+
+
+            <div className="flex flex-wrap items-center p-2">
+              {tags.map(tag => (
+                <span
+                  key={tag}
+                  className="flex items-center m-1 px-2 py-1 bg-primary text-primary-foreground rounded-sm text-sm"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="ml-1 focus:outline-none"
+                    aria-label={`Remove ${tag}`}
+                  >
+                    <X size={14}/>
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isLLMMode && (
+          <div className="flex flex-wrap items-center p-2 border rounded-lg bg-background">
+            {tags.map(tag => (
+              <span
+                key={tag}
+                className="flex items-center m-1 px-2 py-1 bg-primary text-primary-foreground rounded-full text-sm"
               >
-                <X size={14}/>
-              </button>
-            </span>
-          ))}
-          <Input
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleInputKeyDown}
-            className="flex-grow border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
-            placeholder="Enter ingredients (press Enter to add)"
-            aria-label="Enter ingredients"
-          />
-        </div>
-        <Button type="submit" className="w-full text-lg py-6" size="lg" disabled={isFetching}>
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="ml-1 focus:outline-none"
+                  aria-label={`Remove ${tag}`}
+                >
+                  <X size={14}/>
+                </button>
+              </span>
+            ))}
+            <Input
+              type="text"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleInputKeyDown}
+              className="flex-grow border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              placeholder="Enter ingredients (press Enter to add)"
+              aria-label="Enter ingredients"
+            />
+          </div>
+        )}
+        <Button type="submit" className="w-full text-lg py-6" size="lg" disabled={tags.length === 0 || isFetching}>
           {isFetching ? (
             <>
               <span className="loading loading-spinner loading-sm mr-2"></span>
