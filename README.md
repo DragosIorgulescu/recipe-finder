@@ -4,6 +4,12 @@ A small demo of a recipe finder app. Tha application has 2 modes it can run in:
 - **default**: Displays a UI with a regular tag input, allowing the user to input multiple ingredients and searching recipes based on them
 - **LLM mode**: Displays a UI with a text area allowing the user to type in free-form, which is then interpreted by an LLM running in the browser to generate ingredient tags for lookup
   - _this requires downloading a small 8b (~4 GB) parameter model that runs in the browser, the download is handled automatically by the client_ 
+           
+## User stories
+
+- as a user, I want to be able to type in a list of ingredients and get back a list of recipes I can make with those ingredients
+- as a user, I don't want to get recipes that include ingredients which are not in the list I provided/have available
+- as a user, I want the option to type freely instead of providing a list of ingredients, and get suggested recipes based on the ingredients I typed in
 
 ## Project Structure
 
