@@ -27,6 +27,8 @@ RUN npm ci --include=dev
 # Copy application code
 COPY --link . .
 
+ENV NEXT_PUBLIC_API_URL https://recipe-finder-black-field-9024.fly.dev
+
 # Build application
 RUN npm run build
 

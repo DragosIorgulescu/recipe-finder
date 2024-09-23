@@ -27,6 +27,8 @@ interface Recipe {
   ingredients: { name: string }[]
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
 function RecipeFinder() {
   const {isPending, error, data: recipes, isFetching, refetch} = useQuery<Recipe[]>({
     enabled: false, queryKey: ['recipes'], queryFn: async () => {
@@ -34,7 +36,7 @@ function RecipeFinder() {
         ingredients: tags.join(','),
       });
 
-      const url = new URL('http://localhost:3000/api/v1/recipes')
+      const url = new URL(`${API_URL}/api/v1/recipes`)
       url.search = queryParams.toString()
 
       const response = await fetch(url)
